@@ -1,0 +1,17 @@
+[Unit]
+Description=Bratwurst Power
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/opt/bratwurstpower/venv/bin/python /opt/bratwurstpower/app/bratwurst.py
+Restart=on-failure
+RuntimeDirectory=bratwurstpower
+RuntimeDirectoryPreserve=yes
+User=bratwurstpower
+Group=bratwurstpower
+SyslogIdentifier=bwpower
+
+[Install]
+WantedBy=default.target
