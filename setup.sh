@@ -27,7 +27,8 @@ install_service() {
 
     # Install packages from requirements.txt if it exists
     if [ -f "$REQUIREMENTS_FILE" ]; then
-        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install -r "$REQUIREMENTS_FILE"
+        sudo cp "$REQUIREMENTS_FILE" "$TARGETDIR"
+        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install -r --no-cache-dir "$TARGETDIR/requirements.txt"
     fi
 
     # Copy Python files from source directory to target directory
@@ -61,7 +62,8 @@ update_service() {
 
     # Install packages from requirements.txt if it exists
     if [ -f "$REQUIREMENTS_FILE" ]; then
-        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install --upgrade --no-cache-dir -r "$REQUIREMENTS_FILE"
+        sudo cp "$REQUIREMENTS_FILE" "$TARGETDIR"
+        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install --upgrade --no-cache-dir -r "$TARGETDIR/requirements.txt"
     fi
 
     # Ask if the .ini file should be replaced
