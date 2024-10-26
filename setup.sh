@@ -28,7 +28,7 @@ install_service() {
     # Install packages from requirements.txt if it exists
     if [ -f "$REQUIREMENTS_FILE" ]; then
         sudo cp "$REQUIREMENTS_FILE" "$TARGETDIR"
-        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install -r --no-cache-dir "$TARGETDIR/requirements.txt"
+        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install --no-cache-dir -r "$TARGETDIR/requirements.txt"
     fi
 
     # Copy Python files from source directory to target directory
