@@ -3,8 +3,9 @@
 # Define variables
 SERVICE_NAME="bratwurstpower"
 USERNAME="$SERVICE_NAME"
-VENVDIR="/opt/$SERVICE_NAME/venv"
-TARGETDIR="/opt/$SERVICE_NAME/app"
+BASEDIR="/opt/$SERVICE_NAME"
+VENVDIR="$BASEDIR/venv"
+TARGETDIR="$BASEDIR/app"
 SOURCEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICEFILE="$SOURCEDIR/$SERVICE_NAME.service"
 REQUIREMENTS_FILE="$SOURCEDIR/requirements.txt"
@@ -19,7 +20,7 @@ install_service() {
 
     # Set up directory structure and permissions
     sudo mkdir -p "$TARGETDIR"
-    sudo chown "$USERNAME":"$USERNAME" "$TARGETDIR"
+    sudo chown -R "$USERNAME":"$USERNAME" "$BASEDIR"
 
     # Create Python virtual environment
     sudo -u "$USERNAME" python3 -m venv "$VENVDIR"
@@ -99,8 +100,7 @@ uninstall_service() {
     sudo systemctl daemon-reload
 
     # Delete application files and virtual environment
-    sudo rm -rf "$VENVDIR"
-    sudo rm -rf "$TARGETDIR"
+    sudo rm -rf "$BASEDIR"
 
     # Delete the system user
     sudo userdel "$USERNAME"
