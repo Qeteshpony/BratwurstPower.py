@@ -7,21 +7,33 @@ import pca9557
 import paho.mqtt.client as mqtt
 import socket
 import signal
+import configparser
+import os
 
 hostname = socket.gethostname()
+if os.path.isfile("./bratwurstpower.ini"):
+    inifile = "./bratwurstpower.ini"
+elif os.path.isfile("/etc/bratwurstpower.ini"):
+    inifile = "/etc/bratwurstpower.ini"
+else:
+    raise FileNotFoundError("Could not find bratwurstpower.ini")
 
-mqtt_server = "mqtt.local"
-mqtt_port = 1883
-mqtt_username = ""  # Leave empty if not in use
-mqtt_password = ""  # Leave empty if not in use
-mqtt_topic = "bratwurst-power/" + hostname + "/"
-hass_discovery_prefix = "homeassistant/"
+config = configparser.ConfigParser()
+config.read(inifile)
+
+
+mqtt_server = config["mqtt"]["server"]
+mqtt_port = int(config["mqtt"]["port"])
+mqtt_username = config["mqtt"]["username"]
+mqtt_password = config["mqtt"]["password"]
+mqtt_topic = config["mqtt"]["base_topic"] + hostname + "/"
+hass_discovery_prefix = config["mqtt"]["hass_discovery_prefix"]
 hardware_version = "2.1.0"
 software_version = "0.1.0"
 
-inainterval = 1.0  # time in seconds between power readouts
+inainterval = float(config["general"]["measurement_interval"])
 
-loglevel = logging.INFO
+loglevel = config["general"]["loglevel"]
 
 logging.basicConfig(level=loglevel,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
