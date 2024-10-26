@@ -9,7 +9,7 @@ TARGETDIR="$BASEDIR/app"
 SOURCEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVICEFILE="$SOURCEDIR/$SERVICE_NAME.service"
 REQUIREMENTS_FILE="$SOURCEDIR/requirements.txt"
-SYSTEMD_SERVICE_FILE="/etc/systemd/system/$SERVICE_NAME.service"
+SYSTEMD_SERVICE_FILE="/usr/lib/systemd/system/$SERVICE_NAME.service"
 CONFIG_FILE="$SOURCEDIR/$SERVICE_NAME.example.ini"
 CONFIG_DEST="/etc/$SERVICE_NAME.ini"
 
