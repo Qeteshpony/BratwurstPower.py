@@ -61,7 +61,7 @@ update_service() {
 
     # Install packages from requirements.txt if it exists
     if [ -f "$REQUIREMENTS_FILE" ]; then
-        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install --upgrade -r "$REQUIREMENTS_FILE"
+        sudo -u "$USERNAME" "$VENVDIR/bin/pip" install --upgrade --no-cache-dir -r "$REQUIREMENTS_FILE"
     fi
 
     # Ask if the .ini file should be replaced
