@@ -12,6 +12,8 @@ hostname = socket.gethostname()
 
 mqtt_server = "mqtt.local"
 mqtt_port = 1883
+mqtt_username = ""  # Leave empty if not in use
+mqtt_password = ""  # Leave empty if not in use
 mqtt_topic = "bratwurst-power/" + hostname + "/"
 hass_discovery_prefix = "homeassistant/"
 hardware_version = "2.1.0"
@@ -304,6 +306,7 @@ def main():
     signal.signal(signal.SIGTERM, signal_handler)
     logging.info("Starting MQTT client")
     mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    mqttc.username_pw_set(mqtt_username, mqtt_password)
     mqttc.on_connect = mqtt_on_connect
     mqttc.on_message = mqtt_on_message
     mqttc.will_set(mqtt_topic + "status", "offline", retain=True)
