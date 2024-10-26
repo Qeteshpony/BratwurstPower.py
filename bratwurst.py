@@ -1,7 +1,4 @@
-#!/home/qetesh/.virtualenvs/BratwurstPower.py/bin/python
 import json
-from json import JSONDecodeError
-
 import smbus3
 import ina219
 import logging
@@ -115,7 +112,7 @@ for inaname, values in inaconfig.items():
     inas[inaname] = device
 
 
-def signal_handler(sig, frame):
+def signal_handler(sig, _frame):
     logging.info(f"Received signal: {sig}")
     global shutdown
     shutdown = True
@@ -142,7 +139,7 @@ def read_inas() -> dict:
             }
     return results
 
-def mqtt_on_connect(client: mqtt.Client, userdata, flags, reason_code, properties) -> None:
+def mqtt_on_connect(client: mqtt.Client, _userdata, _flags, _reason_code, _properties) -> None:
     # gets called when MQTT is connected
     logging.info("Connected to MQTT")
     client.subscribe(mqtt_topic + "command")
@@ -150,12 +147,12 @@ def mqtt_on_connect(client: mqtt.Client, userdata, flags, reason_code, propertie
     hass_discovery(client)
 
 
-def mqtt_on_message(client: mqtt.Client, userdata, msg: mqtt.MQTTMessage) -> None:
+def mqtt_on_message(_client: mqtt.Client, _userdata, msg: mqtt.MQTTMessage) -> None:
     # gets called when an MQTT message is received
     logging.info(f"MQTT message received on {msg.topic}: {msg.payload.decode()}")
     try:
         command = json.loads(msg.payload)
-    except JSONDecodeError:
+    except json.JSONDecodeError:
         logging.error(f"Command does not contain valid JSON: {msg.payload}")
     else:
         for key, value in command.items():
