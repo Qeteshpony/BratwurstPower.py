@@ -13,35 +13,35 @@ SYSTEMD_SERVICE_FILE="/usr/lib/systemd/system/$SERVICE_NAME.service"
 CONFIG_FILE="$SOURCEDIR/$SERVICE_NAME.example.ini"
 CONFIG_DEST="/etc/$SERVICE_NAME.ini"
 
-# todo: add tons of echos
-
 # Function to install and set up the service
 install_service() {
-    # Create system user without login shell
+    echo "Create system user $USERNAME"
     sudo useradd --system --no-create-home --shell /usr/sbin/nologin "$USERNAME" || true
+
+    echo "Add user to group i2c"
     sudo usermod -aG i2c "$USERNAME"
 
-    # Set up directory structure and permissions
+    echo "Set up directory structure and permissions"
     sudo mkdir -p "$TARGETDIR"
     sudo chown -R "$USERNAME":"$USERNAME" "$BASEDIR"
 
-    # Create Python virtual environment
+    echo "Create Python virtual environment"
     sudo -u "$USERNAME" python3 -m venv "$VENVDIR"
 
-    # Install packages from requirements.txt if it exists
+    echo "Install packages from requirements.txt if needed"
     if [ -f "$REQUIREMENTS_FILE" ]; then
         sudo cp "$REQUIREMENTS_FILE" "$TARGETDIR"
         sudo -u "$USERNAME" "$VENVDIR/bin/pip" install --no-cache-dir -r "$TARGETDIR/requirements.txt"
     fi
 
-    # Copy Python files from source directory to target directory
+    echo "Copy files to $TARGETDIR"
     sudo cp "$SOURCEDIR"/*.py "$TARGETDIR"
     sudo chown "$USERNAME":"$USERNAME" "$TARGETDIR"/*.py
 
-    # Copy .ini file to /etc
+    echo "Copy .ini file to /etc"
     copy_config_file
 
-    # Copy and enable systemd service
+    echo "Install and enable systemd service"
     sudo cp "$SERVICEFILE" "$SYSTEMD_SERVICE_FILE"
     sudo chmod 644 "$SYSTEMD_SERVICE_FILE"
     sudo systemctl daemon-reload
@@ -53,17 +53,21 @@ install_service() {
 # Function to update the service
 update_service() {
     echo "Updating $SERVICE_NAME..."
+    cd "$SOURCEDIR" || exit
 
-    # Overwrite the service file
+    echo "Update from git"
+    git pull
+
+    echo "Overwrite the service file"
     sudo cp "$SERVICEFILE" "$SYSTEMD_SERVICE_FILE"
     sudo chmod 644 "$SYSTEMD_SERVICE_FILE"
     sudo systemctl daemon-reload
 
-    # Overwrite Python scripts
+    echo "Overwrite Python scripts"
     sudo cp "$SOURCEDIR"/*.py "$TARGETDIR"
     sudo chown "$USERNAME":"$USERNAME" "$TARGETDIR"/*.py
 
-    # Install packages from requirements.txt if it exists
+    echo "Install or update python packages if needed"
     if [ -f "$REQUIREMENTS_FILE" ]; then
         sudo cp "$REQUIREMENTS_FILE" "$TARGETDIR"
         sudo -u "$USERNAME" "$VENVDIR/bin/pip" install --upgrade --no-cache-dir -r "$TARGETDIR/requirements.txt"
@@ -96,35 +100,44 @@ copy_config_file() {
 
 # Function to uninstall and remove the service
 uninstall_service() {
-    # Stop and disable the systemd service
+    echo "Stop and disable the systemd service"
     sudo systemctl stop "$SERVICE_NAME.service"
     sudo systemctl disable "$SERVICE_NAME.service"
 
-    # Remove the service file and reload systemd
+    echo "Remove the service file and reload systemd"
     sudo rm -f "$SYSTEMD_SERVICE_FILE"
     sudo systemctl daemon-reload
     sudo systemctl reset-failed
 
-    # Delete application files and virtual environment
+    echo "Delete application files and virtual environment"
     sudo rm -rf "$BASEDIR"
 
-    # Delete the system user
+    echo "Delete the system user"
     sudo userdel "$USERNAME"
 
-    # Remove the .ini file from /etc
+    echo "Remove the .ini file from /etc"
     sudo rm -f "$CONFIG_DEST"
 
     echo "Uninstallation complete. All $SERVICE_NAME components have been removed."
 }
 
 # Main script logic
-if [ "$1" == "uninstall" ]; then
-    uninstall_service
-else
-    # Check if the service is already installed
-    if systemctl list-units --full --all | grep -q "$SERVICE_NAME.service"; then
-        update_service
-    else
+case "$1" in
+    install)
         install_service
-    fi
-fi
+        ;;
+    update)
+        if systemctl list-units --full --all | grep -q "$SERVICE_NAME.service"; then
+            update_service
+        else
+            echo "Service $SERVICE_NAME is not installed. Please run the script with 'install' to set it up."
+        fi
+        ;;
+    uninstall)
+        uninstall_service
+        ;;
+    *)
+        echo "Usage: $0 {install|update|uninstall}"
+        exit 1
+        ;;
+esac
