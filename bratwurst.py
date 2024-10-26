@@ -11,6 +11,8 @@ import configparser
 import os
 
 hostname = socket.gethostname()
+
+# check if ini file is available
 if os.path.isfile("./bratwurstpower.ini"):
     inifile = "./bratwurstpower.ini"
 elif os.path.isfile("/etc/bratwurstpower.ini"):
@@ -18,10 +20,12 @@ elif os.path.isfile("/etc/bratwurstpower.ini"):
 else:
     raise FileNotFoundError("Could not find bratwurstpower.ini")
 
+# read config ini
 config = configparser.ConfigParser()
 config.read(inifile)
 
-
+# import variables from config
+mqtt_enabled = int(config["mqtt"]["enabled"])
 mqtt_server = config["mqtt"]["server"]
 mqtt_port = int(config["mqtt"]["port"])
 mqtt_username = config["mqtt"]["username"]
@@ -30,10 +34,9 @@ mqtt_topic = config["mqtt"]["base_topic"] + hostname + "/"
 hass_discovery_prefix = config["mqtt"]["hass_discovery_prefix"]
 hardware_version = "2.1.0"
 software_version = "0.1.0"
-
 inainterval = float(config["general"]["measurement_interval"])
-
 loglevel = config["general"]["loglevel"]
+runtime_dir = config["general"]["runtime_directory"]
 
 logging.basicConfig(level=loglevel,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -316,14 +319,15 @@ def hass_discovery(client: mqtt.Client) -> None:
 def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
-    logging.info("Starting MQTT client")
     mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     mqttc.username_pw_set(mqtt_username, mqtt_password)
     mqttc.on_connect = mqtt_on_connect
     mqttc.on_message = mqtt_on_message
     mqttc.will_set(mqtt_topic + "status", "offline", retain=True)
-    mqttc.connect(mqtt_server, mqtt_port, 60)
-    mqttc.loop_start()
+    if mqtt_enabled:
+        logging.info("Starting MQTT client")
+        mqttc.connect(mqtt_server, mqtt_port, 60)
+        mqttc.loop_start()
 
     lastchecktime = 0
     # loop until told otherwise...
@@ -332,14 +336,19 @@ def main():
             if lastchecktime + inainterval < time.time():
                 lastchecktime = time.time()
                 powerstats = read_inas()
-                mqttc.publish(mqtt_topic + "powerstats", json.dumps(powerstats))
-                mqttc.publish(mqtt_topic + "pinstates", json.dumps(pcapins))
+                if mqttc.is_connected():
+                    mqttc.publish(mqtt_topic + "powerstats", json.dumps(powerstats))
+                    mqttc.publish(mqtt_topic + "pinstates", json.dumps(pcapins))
+                if os.path.isdir(runtime_dir):
+                    with open(os.path.join(runtime_dir, "powerstats.json"), "w") as f:
+                        f.write(json.dumps(powerstats))
             # sleep for 100ms to prevent unnessecary cpu load
             time.sleep(0.1)
     except KeyboardInterrupt:
         logging.info("Keyboard interrupt received, shutting down")
-    logging.info("Shutting down MQTT client")
-    mqttc.disconnect()
+    if mqttc.is_connected():
+        logging.info("Shutting down MQTT client")
+        mqttc.disconnect()
     exit(0)
 
 if __name__ == '__main__':
