@@ -13,10 +13,13 @@ SYSTEMD_SERVICE_FILE="/usr/lib/systemd/system/$SERVICE_NAME.service"
 CONFIG_FILE="$SOURCEDIR/$SERVICE_NAME.example.ini"
 CONFIG_DEST="/etc/$SERVICE_NAME.ini"
 
+# todo: add tons of echos
+
 # Function to install and set up the service
 install_service() {
     # Create system user without login shell
     sudo useradd --system --no-create-home --shell /usr/sbin/nologin "$USERNAME" || true
+    sudo usermod -aG i2c "$USERNAME"
 
     # Set up directory structure and permissions
     sudo mkdir -p "$TARGETDIR"
