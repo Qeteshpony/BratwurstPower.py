@@ -98,6 +98,7 @@ uninstall_service() {
     # Remove the service file and reload systemd
     sudo rm -f "$SYSTEMD_SERVICE_FILE"
     sudo systemctl daemon-reload
+    sudo systemctl reset-failed
 
     # Delete application files and virtual environment
     sudo rm -rf "$BASEDIR"
