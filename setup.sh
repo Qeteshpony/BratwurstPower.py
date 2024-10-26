@@ -85,6 +85,9 @@ update_service() {
         copy_config_file
     fi
 
+    echo "Restarting the service"
+    sudo systemctl restart "$SERVICE_NAME.service"
+
     echo "$SERVICE_NAME has been updated."
 }
 
